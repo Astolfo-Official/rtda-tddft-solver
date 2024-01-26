@@ -297,7 +297,7 @@ def af_davidson_hybird(mf, vind, hdiag, nstate=1, conv_tol=1e-5, max_cycle=114, 
     '''
     set up initial guess X = TDA initila guess, Y=0
     '''
-    from pydmet.solvers.rtda import TDA as tda
+    from rtda import TDA as tda
     init = tda(mf).init_guess(mf=mf, nstates=size_new)
     X[size_old:size_new,:] = init
 

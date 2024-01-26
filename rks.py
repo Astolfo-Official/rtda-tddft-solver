@@ -137,7 +137,7 @@ class CasidaTDDFT(TDDFT, TDA):
         e_ia = e_ia.T
         hdiag = e_ia.ravel()
 
-        vresp = mf.gen_response(singlet=singlet, hermi=1)
+        vresp = mf.gen_response(singlet=singlet, hermi=0)
 
         def vind(X,Y):
             X = numpy.asarray(X).reshape(-1,nocc,nvir)
@@ -269,7 +269,7 @@ class CasidaTDDFT(TDDFT, TDA):
             '''
         else :
             vind, hdiag = self.gen_hybird_vind(self._scf)
-            from pydmet.solvers.afdavidson import af_davidson_hybird as aftddft
+            from afdavidson import af_davidson_hybird as aftddft
             self.e, x1, y1 = aftddft(mf, vind, hdiag, nstate=self.nstates, conv_tol=1e-5, max_cycle=self.max_cycle, verbose=log)
             x1 = x1.reshape(-1,nocc,nvir)
             y1 = y1.reshape(-1,nocc,nvir)

@@ -58,7 +58,7 @@ class CasidaTDDFT(TDDFT, TDA):
             x0[i, j] = 1  # Koopmans' excitations
         return x0
     
-    def gen_vind(self, dm0, mo_coeff0, mo_occ0, mf=None):
+    def gen_vind(self, mf=None):
         if mf is None:
             mf = self._scf
         wfnsym = self.wfnsym
@@ -93,9 +93,7 @@ class CasidaTDDFT(TDDFT, TDA):
         ed_ia = e_ia * d_ia
         hdiag = e_ia.ravel() ** 2
 
-        #vresp = mf.gen_response(singlet=singlet, hermi=1)
-        from pydmet.solvers.response_functions import get_rv1ao
-        vresp = get_rv1ao(mf, dm0, mo_coeff=mo_coeff0, mo_occ=mo_occ0, singlet=singlet, hermi=1)
+        vresp = mf.gen_response(singlet=singlet, hermi=1)
 
         def vind(zs):
             zs = numpy.asarray(zs).reshape(-1,nocc,nvir)
@@ -115,7 +113,7 @@ class CasidaTDDFT(TDDFT, TDA):
 
         return vind, hdiag
     
-    def gen_hybird_vind(self, dm0, mo_coeff0, mo_occ0, mf=None):
+    def gen_hybird_vind(self, mf=None):
         if mf is None:
             mf = self._scf
         wfnsym = self.wfnsym
@@ -139,9 +137,7 @@ class CasidaTDDFT(TDDFT, TDA):
         e_ia = e_ia.T
         hdiag = e_ia.ravel()
 
-        #vresp = mf.gen_response(singlet=singlet, hermi=1)
-        from pydmet.solvers.response_functions import get_rv1ao
-        vresp = get_rv1ao(mf, dm0, mo_coeff=mo_coeff0, mo_occ=mo_occ0, singlet=singlet, hermi=0)
+        vresp = mf.gen_response(singlet=singlet, hermi=1)
 
         def vind(X,Y):
             X = numpy.asarray(X).reshape(-1,nocc,nvir)
@@ -198,7 +194,7 @@ class CasidaTDDFT(TDDFT, TDA):
         return mf
         
 
-    def kernel(self, dm0, mo_coeff0, mo_occ0, x0=None, nstates=None):
+    def kernel(self, x0=None, nstates=None):
         '''TDDFT diagonalization solver
         '''
         cpu0 = (lib.logger.process_clock(), lib.logger.perf_counter())
@@ -217,7 +213,7 @@ class CasidaTDDFT(TDDFT, TDA):
         #mf = self.frozen_core()
         mf = self._scf
         '''
-        vind, hdiag = self.gen_vind(dm0, mo_coeff0, mo_occ0, self._scf)
+        vind, hdiag = self.gen_vind(self._scf)
         precond = self.get_precond(hdiag)
         if x0 is None:
             x0 = self.init_guess(self._scf, self.nstates)
@@ -234,7 +230,7 @@ class CasidaTDDFT(TDDFT, TDA):
         nvir = len(viridx)
         
         if not mf._numint.libxc.is_hybrid_xc(mf.xc):
-            vind, hdiag = self.gen_vind(dm0, mo_coeff0, mo_occ0, self._scf)
+            vind, hdiag = self.gen_vind(self._scf)
             from pydmet.solvers.afdavidson import af_davidson as aftddft
             w2, x1 = aftddft(mf, vind, hdiag, nstate=self.nstates, conv_tol=1e-5, max_cycle=self.max_cycle, verbose=log)
             '''
@@ -272,7 +268,7 @@ class CasidaTDDFT(TDDFT, TDA):
                 self._finalize()
             '''
         else :
-            vind, hdiag = self.gen_hybird_vind(dm0, mo_coeff0, mo_occ0, self._scf)
+            vind, hdiag = self.gen_hybird_vind(self._scf)
             from pydmet.solvers.afdavidson import af_davidson_hybird as aftddft
             self.e, x1, y1 = aftddft(mf, vind, hdiag, nstate=self.nstates, conv_tol=1e-5, max_cycle=self.max_cycle, verbose=log)
             x1 = x1.reshape(-1,nocc,nvir)
